@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>P/V计算器</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="P/V计算器">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#f2f6fc;color:#333;margin:0;padding:20px}
+    h1{text-align:center;margin-bottom:20px}
+    label{display:block;margin:8px 0 4px;font-weight:600}
+    input,select{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px}
+    button{margin:10px 5px 0 0;padding:10px 18px;border:none;border-radius:4px;background:#007bff;color:#fff;font-size:14px;cursor:pointer}
+    button:hover{background:#0056b3}
+    .result{margin-top:20px;padding:12px;border-left:4px solid #007bff;background:#e9f7fe}
+  </style>
+</head>
+<body>
+  <h1>生物反应器 P/V 计算器</h1>
+
+  <label>反应器类型
+    <select id="type">
+      <option value="">--请选择--</option>
+      <option value="GE-XDR500">GE-XDR500</option>
+      <option value="Hyclone-SUB100">Hyclone-SUB100</option>
+      <option value="Hyclone-SUB500">Hyclone-SUB500</option>
+      <option value="Sartorius-200">Sartorius-200</option>
+      <option value="Applikon-3L">Applikon-3L</option>
+      <option value="Applikon-15L">Applikon-15L</option>
+      <option value="Sartorius-50">Sartorius-50</option>
+      <option value="BBI-3L">BBI-3L</option>
+      <option value="GE-XDR50">GE-XDR50</option>
+      <option value="Sartorius-500">Sartorius-500</option>
+    </select>
+  </label>
+
+  <label>反应体积 (L)
+    <input type="number" id="V" placeholder="例如 100">
+  </label>
+
+  <label>P/V (W/m³)
+    <input type="number" id="pv" placeholder="留空则计算">
+  </label>
+
+  <label>转速 (RPM)
+    <input type="number" id="rpm" placeholder="留空则计算">
+  </label>
+
+  <button onclick="calc()">计算</button>
+  <button onclick="reset()">重置</button>
+
+  <div id="res" class="result">等待计算…</div>
+
+  <script>
+    const data={
+      "GE-XDR500":{ne:1.15,d:0.2667},
+      "Hyclone-SUB100":{ne:2.1,d:0.146},
+      "Hyclone-SUB500":{ne:2.1,d:0.251},
+      "Sartorius-200":{ne:1.1,d:0.225},
+      "Applikon-3L":{ne:1.5,d:0.045},
+      "Applikon-15L":{ne:1.5,d:0.075},
+      "Sartorius-50":{ne:1.4,d:0.143},
+      "BBI-3L":{ne:0.7,d:0.052},
+      "GE-XDR50":{ne:1.15,d:0.21},
+      "Sartorius-500":{ne:1.3,d:0.31}
+    };
+    const ρ=1000;
+
+    function calc(){
+      const type=document.getElementById('type').value;
+      const V=parseFloat(document.getElementById('V').value);
+      const pv=parseFloat(document.getElementById('pv').value);
+      const rpm=parseFloat(document.getElementById('rpm').value);
+
+      if(!type||!V){res.innerHTML='请选择反应器并输入体积';return}
+      const {ne,d}=data[type];
+      const V_m3=V/1000;
+
+      if(pv&&!rpm){
+        const n=Math.pow(pv*V_m3/(ne*ρ*Math.pow(d,5)),1/3);
+        const rpm_calc=n*60;
+        document.getElementById('rpm').value=rpm_calc.toFixed(1);
+        res.innerHTML=`转速 ≈ ${rpm_calc.toFixed(1)} RPM`;
+      }else if(rpm&&!pv){
+        const n=rpm/60;
+        const pv_calc=(ne*ρ*Math.pow(n,3)*Math.pow(d,5))/V_m3;
+        document.getElementById('pv').value=pv_calc.toFixed(2);
+        res.innerHTML=`P/V ≈ ${pv_calc.toFixed(2)} W/m³`;
+      }else{
+        res.innerHTML='请只填 P/V 或转速其一';
+      }
+    }
+    function reset(){
+      ['type','V','pv','rpm'].forEach(id=>document.getElementById(id).value='');
+      res.innerHTML='等待计算…';
+    }
+
+    // Service Worker 注册
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  </script>
+</body>
+</html>
